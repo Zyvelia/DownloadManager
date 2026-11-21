@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="zdm-session" content="__SESSION_KEY__">
+<meta name="theme-color" content="#11101c">
+<title>Z’s Download Manager</title>
+<link rel="stylesheet" href="/style.css">
+<script src="/ui.js" defer></script>
+</head>
+<body>
+<div class="titlebar">Z’s Download Manager</div>
+<aside class="sidebar">
+  <div class="brand">Z’s Download Manager<small>File downloads &amp; queues</small></div>
+  <nav aria-label="Workspace">
+    <button data-view="Downloads"><span aria-hidden="true">↓</span> Downloads</button>
+    <button data-view="Scheduler"><span aria-hidden="true">▦</span> Scheduler</button>
+    <button data-view="History"><span aria-hidden="true">◷</span> History</button>
+    <button data-view="Browser Extension"><span aria-hidden="true">♧</span> Browser Extension</button>
+    <button data-view="Settings"><span aria-hidden="true">⚙</span> Settings</button>
+  </nav>
+</aside>
+<main>
+  <header class="pagehead">
+    <div><h1 id="title">Z’s Download Manager</h1><div id="subtitle"></div></div>
+    <div id="layout-actions"><button id="customize">▦ &nbsp; Customize layout</button><button id="reset" hidden>Reset layout</button><button id="done" class="primary" hidden>✓ &nbsp; Done</button></div>
+  </header>
+  <div id="notice" role="status" hidden></div>
+  <section class="panel" id="add">
+    <h2 id="add-title">Add download</h2>
+    <form id="add-form">
+      <input aria-label="Direct URL" name="url" type="url" placeholder="Direct URL (e.g. https://example.com/file.zip)" required>
+      <div class="field"><label for="destination">Destination</label><input name="destination" id="destination" required><button type="button" id="browse" title="Browse folders" aria-label="Browse folders">▱</button></div>
+      <label class="field" id="schedule-field" hidden>Start at <input name="when" type="datetime-local"></label>
+      <button class="primary" id="submit-download">Add to queue</button>
+    </form>
+  </section>
+  <div class="workspace" id="workspace">
+    <section class="panel queue">
+      <div class="queue-head"><h2 id="queue-title">Download queue</h2>
+        <div class="toolbar"><div id="filters"></div><button id="hold"></button></div>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th scope="col">#</th><th scope="col">File</th><th scope="col">Progress</th><th scope="col">Speed</th><th scope="col" id="time-label">ETA</th><th scope="col">Status</th><th scope="col" aria-label="Actions"></th></tr></thead><tbody id="rows"></tbody></table>
+        <div id="empty" class="empty" hidden><strong id="empty-title"></strong><span id="empty-hint"></span></div>
+      </div>
+    </section>
+    <div id="panels" aria-label="Optional panels"></div>
+  </div>
+  <section class="panel secondary" id="extension" hidden>
+    <h2>Connect Chrome or Edge</h2>
+    <ol>
+      <li>Open <code>chrome://extensions</code> or <code>edge://extensions</code> and turn on Developer mode.</li>
+      <li>Choose <strong>Load unpacked</strong> and select the app’s <code>extension</code> folder.</li>
+      <li>Open the extension, paste the connection key below, and click <strong>Connect</strong>.</li>
+    </ol>
+    <div class="field"><label for="key">Connection key</label><input id="key" readonly><button id="copy">Copy key</button></div>
+    <p id="extension-status" class="muted"></p>
+    <p class="muted">Right-click a download link and choose <strong>Send to Z’s Download Manager</strong>.</p>
+  </section>
+  <section class="panel secondary" id="settings" hidden>
+    <h2>Transfer settings</h2>
+    <form id="settings-form">
+      <label>Default destination<input name="destination" required></label>
+      <label>Simultaneous downloads<input name="parallel" type="number" min="1" max="8" required></label>
+      <label>Speed limit (KiB/s, 0 for off)<input name="limit" type="number" min="0" required></label>
+      <button class="primary">Save settings</button>
+    </form>
+  </section>
+</main>
+<footer><span id="summary">Connecting to the local service…</span><div><!-- PACKAGE --><span id="speed-total"></span><label>Speed limit <select id="limit"><option value="0">Off</option><option value="512">512 KiB/s</option><option value="1024">1 MiB/s</option><option value="5120">5 MiB/s</option></select></label></div></footer>
+</body>
+</html>

@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Z’s Download Manager</title><link rel="stylesheet" href="popup.css"><script src="popup.js" defer></script></head>
+<body>
+<h1>Z’s Download Manager</h1>
+<p id="status" role="status">Checking connection…</p>
+<form id="connect"><label>Connection key<input id="key" type="password" required></label><button>Connect</button></form>
+<form id="send" hidden><label>Direct download link<input id="url" type="url" placeholder="https://example.com/file.zip" required></label><button>Send to Z’s</button></form>
+<div class="tools"><a href="http://127.0.0.1:8765/" target="_blank" rel="noopener">Open download manager ↗</a><button id="pair" type="button" hidden>Change key</button></div>
+<p class="hint">You can also right-click a download link to send it.</p>
+<p id="result" role="status"></p>
+</body>
+</html>
