@@ -1,6 +1,6 @@
 # Z’s Download Manager browser extension
 
-For Chrome and Edge. Start Z’s Download Manager on the same computer at its default address, http://127.0.0.1:8765.
+For Chrome and Edge. Start the Z’s Download Manager desktop app on the same computer.
 
 1. Extract the extension ZIP.
 2. Open `chrome://extensions` or `edge://extensions`, enable **Developer mode**, and select **Load unpacked**.

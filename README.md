@@ -1,30 +1,28 @@
 # Z’s Download Manager
 
-A local desktop download manager with a dark purple interface and a text-only sidebar. It runs a Python transfer service and opens its workspace in an Edge or Chrome app window when available.
+A native Windows desktop download manager with a dark purple queue, scheduler, history, live speed graph, and customizable panels.
 
-## Start
+## Run on Windows
 
-1. Extract the whole ZIP.
-2. Install Python 3.10 or newer. On Windows, double-click **Start Windows.cmd**. On macOS or Linux, run `python3 app.py`.
-3. Keep the launcher running while downloads are active. If the window does not open automatically, visit http://127.0.0.1:8765.
+Download **Zs-Download-Manager.exe** from the [latest release](https://github.com/Zyvelia/DownloadManager/releases/latest) and double-click it. The Windows x64 executable includes its own runtime. The app opens directly in a desktop window and needs no browser or Python installation.
 
-The app starts with an empty queue. Paste a direct HTTP or HTTPS file link and choose a destination. Use Scheduler for future downloads and Settings for simultaneous transfers and bandwidth limits. The folder picker uses Tk when available. The destination can always be entered manually.
-
-Pause and resume use a partial file when the server supports validated HTTP range requests. Otherwise the transfer restarts. Failed jobs can be retried from the queue. Files with duplicate names receive a numbered suffix. The queue and layout persist locally in `~/.z-download-manager`.
-
-In **Customize layout**, drag side panels or use their move buttons. Hide a panel with **×**, restore it from **Hidden panels**, then select **Done** to save. **Reset layout** restores the defaults.
+Paste a direct HTTP or HTTPS file link and choose a destination. Use **Scheduler** for future downloads, **Settings** for simultaneous transfers and bandwidth limits, and **Customize layout** to rearrange, hide, or restore panels. Close the window to stop active transfers. Pause and resume reuse a partial file when the server supports validated HTTP range requests.
 
 ## Browser extension
 
-1. Run the desktop app on the default port, then open **Browser Extension** in its sidebar.
-2. In Chrome or Edge, open the browser’s extensions page, enable Developer mode, choose **Load unpacked**, and select the extracted `extension` folder.
-3. Open the extension popup. Paste the connection key from the desktop app and select **Connect**.
-4. Paste a direct download link into the popup or right-click a link and choose **Send to Z’s Download Manager**.
+1. Download and extract **Zs-Download-Manager-Extension.zip** from the latest release.
+2. Open `chrome://extensions` or `edge://extensions`, enable **Developer mode**, and select **Load unpacked**. Choose the extracted folder containing `manifest.json`.
+3. Open **Browser Extension** in the desktop app and copy its connection key. Paste it into the extension popup and choose **Connect**.
+4. Paste a link into the popup or right-click a download link and choose **Send to Z’s Download Manager**.
 
-The extension queues links at the app’s default destination. Sites that require browser cookies or an existing browser session may require downloading through the browser itself.
+The extension uses an authenticated connection to the app on the same computer. Links requiring browser cookies may need to be downloaded in the browser itself.
 
-## Update on Windows
+## Update
 
-Close the download manager and its launcher, then double-click **Update Windows.bat**. The updater fetches the latest code from this repository’s `main` branch. A Git checkout requires Git and uses a fast-forward update. An installation extracted from a ZIP uses Python to refresh the application and extension files in place.
+Download **Update Windows.bat** from the release and put it next to **Zs-Download-Manager.exe**. Close the app, then run the updater. It checks the GitHub release checksum before replacing the executable. The queue, settings, connection key, and downloads stay in place. For a source checkout or extracted source archive, the batch file runs the source updater when the executable is absent.
 
-The queue, connection key, settings, and downloaded files stay in their existing locations. If you installed the browser extension, select **Reload** for it on the browser’s extensions page after updating.
+## Run and build from source
+
+Run `python app.py` with Python 3.10 or newer and Tk installed. The native interface works without starting a browser. The release build script needs Python 3.11 or newer and Go 1.24 or newer. Run `python packaging/build_windows.py` to build the Windows x64 executable in `dist/`.
+
+App state is stored in `~/.z-download-manager`.

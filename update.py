@@ -13,8 +13,9 @@ REPOSITORY = "https://github.com/Zyvelia/DownloadManager.git"
 ARCHIVE = "https://codeload.github.com/Zyvelia/DownloadManager/zip/refs/heads/main"
 MAX_ARCHIVE = 16 * 1024 * 1024
 CODE_FILES = (
-    "app.py", "index.html", "style.css", "ui.js", "README.md",
-    "Start Windows.cmd", "Update Windows.bat", "update.py",
+    "app.py", "desktop.py", "README.md",
+    "Start Windows.cmd", "Update Windows.bat", "update.py", ".gitignore",
+    "packaging/launcher.go", "packaging/build_windows.py",
     "extension/manifest.json", "extension/worker.js", "extension/popup.html",
     "extension/popup.css", "extension/popup.js", "extension/README.md",
 )
