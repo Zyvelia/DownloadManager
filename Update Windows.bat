@@ -1,16 +1,19 @@
 @echo off
-setlocal EnableDelayedExpansion
+setlocal DisableDelayedExpansion
+cd /d "%~dp0" || exit /b 1
 rem Read this block before updating files, including this batch file.
 (
-    cd /d "%~dp0" || exit /b 1
     echo Close Z's Download Manager before updating.
     where py >nul 2>nul
     if errorlevel 1 (
-        python "%~dp0update.py"
+        python update.py
     ) else (
-        py -3 "%~dp0update.py"
+        py -3 update.py
     )
-    set "update_result=!ERRORLEVEL!"
+    if errorlevel 1 (
+        pause
+        exit /b 1
+    )
     pause
-    exit /b !update_result!
+    exit /b 0
 )
