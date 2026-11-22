@@ -11,7 +11,7 @@ A native Windows download manager for direct HTTP and HTTPS files.
 
 ## Run on Windows
 
-Download **Zs-Download-Manager.exe** from the [latest release](https://github.com/Zyvelia/DownloadManager/releases/latest) and double-click it. The Windows x64 executable includes its own runtime. The app opens directly in a desktop window and needs no browser or Python installation.
+Use the **Download for Windows x64** link in the [latest release](https://github.com/Zyvelia/DownloadManager/releases/latest) and double-click it. The Windows x64 executable includes its own runtime. The app opens directly in a desktop window and needs no browser or Python installation.
 
 Keep the app open while downloading or waiting for a scheduled transfer. Active transfers save partial data when you close the app.
 
