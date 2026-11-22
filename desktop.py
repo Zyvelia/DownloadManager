@@ -9,11 +9,12 @@ from tkinter import filedialog, messagebox, ttk
 
 import app
 
-BG, SIDE, PANEL, INPUT = "#f4f6f9", "#ffffff", "#ffffff", "#f5f7fa"
-LINE, INK, MUTED = "#e0e6ee", "#142039", "#58677e"
-ACCENT, ACTIVE, SELECTION = "#2760c8", "#e7efff", "#e8f0ff"
-HERO, HERO_TEXT, LIME = "#142743", "#b9cce6", "#d5fa83"
-GOOD, BAD = "#137052", "#a83756"
+BG, SIDE, PANEL, INPUT = "#0d131e", "#101827", "#151f30", "#1c293d"
+LINE, INK, MUTED = "#2b3b52", "#eef4ff", "#a6b6cd"
+ACCENT, ACTIVE, SELECTION = "#8bb7ff", "#223755", "#233b60"
+HERO, HERO_TEXT, LIME = "#152b49", "#c3d5ed", "#d5fa83"
+GOOD, BAD = "#76dfae", "#ff9eaf"
+SCROLL_THUMB = "#4d637e"
 FONT = "Segoe UI" if sys.platform == "win32" else "DejaVu Sans"
 TITLE = "Z’s Download Manager"
 PANELS = {"speed": "Transfer speed", "browser": "Browser extension",
@@ -37,6 +38,32 @@ def date(timestamp):
     return datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M")
 
 
+def use_dark_title_bar(window):
+    if sys.platform != "win32":
+        return
+
+    def on_map(event):
+        if event.widget is not window:
+            return
+        from ctypes import WinDLL, byref, c_int, sizeof
+        from ctypes.wintypes import DWORD, HWND, LPVOID, UINT
+
+        get_ancestor = WinDLL("user32").GetAncestor
+        get_ancestor.argtypes = (HWND, UINT)
+        get_ancestor.restype = HWND
+        hwnd = get_ancestor(window.winfo_id(), 2)
+        if not hwnd:
+            return
+        set_attribute = WinDLL("dwmapi").DwmSetWindowAttribute
+        set_attribute.argtypes = (HWND, DWORD, LPVOID, DWORD)
+        set_attribute.restype = c_int
+        enabled = c_int(1)
+        if set_attribute(hwnd, 20, byref(enabled), sizeof(enabled)):
+            set_attribute(hwnd, 19, byref(enabled), sizeof(enabled))
+
+    window.bind("<Map>", on_map, add="+")
+
+
 class DownloadManager:
     def __init__(self, root):
         self.root = root
@@ -44,6 +71,7 @@ class DownloadManager:
         root.geometry("1350x850")
         root.minsize(1060, 700)
         root.configure(bg=BG)
+        use_dark_title_bar(root)
         self.view = "Downloads"
         self.filter = "All"
         self.draft = None
@@ -152,26 +180,27 @@ class DownloadManager:
                 ("Vertical.Scrollbar.thumb", {"expand": "1", "sticky": "nswe"})
             ]})
         ])
-        style.configure("Queue.Vertical.TScrollbar", background="#bdcada", troughcolor=INPUT,
-                        lightcolor="#bdcada", darkcolor="#bdcada", bordercolor=INPUT, gripcount=0,
+        style.configure("Queue.Vertical.TScrollbar", background=SCROLL_THUMB, troughcolor=INPUT,
+                        lightcolor=SCROLL_THUMB, darkcolor=SCROLL_THUMB, bordercolor=INPUT, gripcount=0,
                         arrowsize=9, borderwidth=0)
-        style.map("Queue.Vertical.TScrollbar", background=[("active", "#91a8c2")])
+        style.map("Queue.Vertical.TScrollbar", background=[("active", "#6784a5")])
 
     def label(self, parent, text="", bg=PANEL, fg=INK, size=10, bold=False, **options):
         return tk.Label(parent, text=text, bg=bg, fg=fg, font=(FONT, size, "bold" if bold else "normal"), **options)
 
     def button(self, parent, text, command, primary=False, sidebar=False, lime=False, **options):
         bg = LIME if lime else ACCENT if primary else SIDE if sidebar else INPUT
-        fg = HERO if lime else "white" if primary else MUTED if sidebar else INK
-        hover = "#e7ffb2" if lime else "#1c4eaa" if primary else ACTIVE
+        fg = BG if primary or lime else MUTED if sidebar else INK
+        hover = "#e7ffb2" if lime else "#afd0ff" if primary else ACTIVE
         return tk.Button(parent, text=text, command=command, bg=bg, fg=fg, activebackground=hover,
-                         activeforeground=fg, disabledforeground="#77859b", relief="flat", bd=0,
+                         activeforeground=fg, disabledforeground="#8796ad", relief="flat", bd=0,
                          highlightthickness=1, highlightbackground=bg, highlightcolor=ACCENT,
                          cursor="hand2", font=(FONT, 9, "bold"), padx=11, pady=7, **options)
 
     def entry(self, parent, variable=None, width=22):
         field = tk.Entry(parent, textvariable=variable, width=width, background=INPUT, foreground=INK,
-                         insertbackground=INK, relief="flat", highlightthickness=1,
+                         insertbackground=INK, selectbackground=ACCENT, selectforeground=BG,
+                         relief="flat", highlightthickness=1,
                          highlightbackground=LINE, highlightcolor=ACCENT, font=(FONT, 10))
         field.variable = variable
         return field
@@ -266,6 +295,7 @@ class DownloadManager:
 
     def new_download(self, scheduled):
         dialog = tk.Toplevel(self.root, bg=BG)
+        use_dark_title_bar(dialog)
         dialog.title("Schedule a download" if scheduled else "New download")
         dialog.transient(self.root)
         dialog.resizable(False, False)
@@ -275,7 +305,8 @@ class DownloadManager:
         self.heading(card, dialog.title())
         self.label(card, "Direct HTTP or HTTPS links · one per line", fg=MUTED).pack(anchor="w")
         links = tk.Text(card, width=63, height=5, bg=INPUT, fg=INK, relief="flat",
-                        insertbackground=INK, highlightthickness=1, highlightbackground=LINE,
+                        insertbackground=INK, selectbackground=ACCENT, selectforeground=BG,
+                        highlightthickness=1, highlightbackground=LINE,
                         font=(FONT, 10), wrap="none", padx=6, pady=6)
         links.pack(fill="x", pady=(5, 12))
         self.label(card, "Save to", bold=True).pack(anchor="w")
@@ -294,7 +325,7 @@ class DownloadManager:
             self.label(card, "Start at (YYYY-MM-DD HH:MM)", bold=True).pack(anchor="w")
             timing = self.entry(card)
             timing.pack(anchor="w", ipady=5, pady=(5, 8))
-        error_label = self.label(card, fg="#a1284c", wraplength=475, justify="left")
+        error_label = self.label(card, fg=BAD, wraplength=475, justify="left")
         error_label.pack(anchor="w", pady=4)
         controls = tk.Frame(card, bg=PANEL)
         controls.pack(fill="x")
@@ -372,7 +403,7 @@ class DownloadManager:
                                         (172, 127, 81, 122 if self.view == "Scheduler" else 58, 105)):
             self.tree.heading(name, text=heading, anchor="w", command=lambda name=name: self.sort_by(name))
             self.tree.column(name, width=width, minwidth=40, stretch=name == "name", anchor="w")
-        self.tree.tag_configure("alternate", background="#f7f9fc")
+        self.tree.tag_configure("alternate", background="#182438")
         self.tree.tag_configure("Completed", foreground=GOOD)
         self.tree.tag_configure("Failed", foreground=BAD)
         self.tree.tag_configure("Downloading", foreground=ACCENT)
@@ -452,7 +483,9 @@ class DownloadManager:
             return
         if self.menu is not None:
             self.menu.destroy()
-        menu = self.menu = tk.Menu(self.root, tearoff=False)
+        menu = self.menu = tk.Menu(self.root, tearoff=False, bg=PANEL, fg=INK,
+                                   activebackground=ACTIVE, activeforeground=INK,
+                                   disabledforeground=MUTED, relief="flat")
         action = ACTIONS.get(job["status"])
         if action:
             menu.add_command(label=action, command=self.act_on_selection)
