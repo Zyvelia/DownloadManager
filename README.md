@@ -2,7 +2,7 @@
 
 A native Windows download manager for direct HTTP and HTTPS files.
 
-- Paste one link or a batch of links, pick a destination, and start now or schedule a local start time.
+- Paste a direct link into **Add a download** and press Enter. Use **Batch add** for multiple links or **Scheduler** for a local start time.
 - Search and sort the queue, filter by status, and prioritize transfers through the **Actions** menu or by right-clicking a row.
 - Pause a transfer, retry a failure, or pause the entire queue. Resume reuses partial files on servers that support validated HTTP range requests. Other servers restart the transfer.
 - Monitor throughput, progress, and estimated time remaining. Use **Customize layout** to rearrange, hide, and restore dashboard panels.
