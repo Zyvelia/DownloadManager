@@ -44,7 +44,7 @@ def build(go, runtime, output):
                 name = member.name.removeprefix("python/")
                 if member.isfile() and member.name.startswith("python/") and include(name):
                     bundle.writestr(name, source.extractfile(member).read())
-            for name in ("app.py", "desktop.py"):
+            for name in ("app.py", "desktop.py", "assets/app.png"):
                 bundle.write(PROJECT / name, name)
             names = set(bundle.namelist())
             required = ROOT_FILES | {"DLLs/_tkinter.pyd", "DLLs/tcl86t.dll", "DLLs/tk86t.dll",
@@ -52,9 +52,13 @@ def build(go, runtime, output):
             if required - names:
                 raise ValueError("Bundled runtime is missing desktop dependencies.")
         shutil.copyfile(PROJECT / "packaging" / "launcher.go", build_dir / "launcher.go")
+        (build_dir / "go.mod").write_text("module zdm-launcher\n\ngo 1.24\n", encoding="ascii")
+        subprocess.run([go, "run", "github.com/akavel/rsrc@v0.10.2", "-arch", "amd64",
+                        "-ico", str(PROJECT / "assets" / "app.ico"), "-o", "icon_windows_amd64.syso"],
+                       cwd=build_dir, check=True)
         output.parent.mkdir(parents=True, exist_ok=True)
-        subprocess.run([go, "build", "-trimpath", "-ldflags", "-s -w -H windowsgui",
-                        "-o", str(output), "launcher.go"], cwd=build_dir, check=True,
+        subprocess.run([go, "build", "-buildvcs=false", "-trimpath", "-ldflags", "-s -w -H windowsgui",
+                        "-o", str(output), "."], cwd=build_dir, check=True,
                        env={**os.environ, "GOOS": "windows", "GOARCH": "amd64", "CGO_ENABLED": "0"})
 
 

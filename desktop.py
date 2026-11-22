@@ -68,8 +68,8 @@ class DownloadManager:
     def __init__(self, root):
         self.root = root
         root.title(TITLE)
-        root.geometry("1350x850")
-        root.minsize(1060, 700)
+        root.geometry("940x610")
+        root.minsize(700, 475)
         root.configure(bg=BG)
         use_dark_title_bar(root)
         self.view = "Downloads"
@@ -87,53 +87,30 @@ class DownloadManager:
         self.nav = {}
         self.cards = {}
         self.configure_style()
-        shell = tk.Frame(root, bg=BG)
-        shell.pack(fill="both", expand=True)
-        sidebar = tk.Frame(shell, bg=SIDE, width=188)
-        sidebar.pack(side="left", fill="y")
-        sidebar.pack_propagate(False)
-        tk.Frame(shell, bg=LINE, width=1).pack(side="left", fill="y")
-        brand = tk.Frame(sidebar, bg=SIDE)
-        brand.pack(fill="x", padx=14, pady=(28, 35))
-        logo = tk.Canvas(brand, width=37, height=37, bg=SIDE, highlightthickness=0)
-        logo.pack(side="left", padx=(0, 10))
-        logo.create_oval(0, 0, 37, 37, fill=HERO, outline="")
-        self.draw_arrow(logo, 18, 17, LIME, 11)
-        wordmark = tk.Frame(brand, bg=SIDE)
-        wordmark.pack(side="left")
-        self.label(wordmark, "Z’s Download", size=10, bold=True).pack(anchor="w")
-        self.label(wordmark, "Manager", fg=MUTED, size=9).pack(anchor="w")
-        for section, links in (
-            ("WORKSPACE", (("Downloads", "download"), ("Scheduler", "clock"), ("History", "history"))),
-            ("PREFERENCES", (("Browser Extension", "browser"), ("Settings", "settings"))),
-        ):
-            self.label(sidebar, section, fg=MUTED, size=8, bold=True).pack(anchor="w", padx=21, pady=(0, 8))
-            for name, symbol in links:
-                row = tk.Frame(sidebar, bg=SIDE)
-                row.pack(fill="x", padx=11, pady=(0, 4))
-                icon = tk.Canvas(row, width=16, height=18, bg=SIDE, highlightthickness=0, cursor="hand2")
-                icon.pack(side="left", padx=(10, 1))
-                self.draw_nav_icon(icon, symbol)
-                icon.bind("<Button-1>", lambda _, name=name: self.show(name))
-                button = self.button(row, name, lambda name=name: self.show(name), anchor="w", sidebar=True)
-                button.pack(side="left", fill="x", expand=True)
-                self.nav[name] = row, icon, button
-            tk.Frame(sidebar, height=21, bg=SIDE).pack()
-        local = tk.Frame(sidebar, bg=INPUT, padx=10, pady=8)
-        local.pack(side="bottom", fill="x", padx=13, pady=17)
-        dot = tk.Canvas(local, width=11, height=11, bg=INPUT, highlightthickness=0)
-        dot.pack(side="left", padx=(0, 5))
-        dot.create_oval(2, 2, 9, 9, fill=GOOD, outline="")
-        self.label(local, "Local engine", bg=INPUT, fg=MUTED, size=9, bold=True).pack(side="left")
-        content = tk.Frame(shell, bg=BG)
-        content.pack(side="left", fill="both", expand=True)
+        icon_path = Path(__file__).with_name("assets") / "app.png"
+        navigation = tk.Frame(root, bg=SIDE, padx=12, pady=7)
+        navigation.pack(fill="x")
+        if icon_path.is_file():
+            self.icon = tk.PhotoImage(file=str(icon_path))
+            root.iconphoto(True, self.icon)
+            self.brand_icon = self.icon.subsample(8, 8)
+            self.label(navigation, image=self.brand_icon, bg=SIDE).pack(side="left", padx=(0, 6))
+        self.label(navigation, "Z’s Download Manager", bg=SIDE, size=9, bold=True).pack(side="left", padx=(0, 10))
+        for name in ("Downloads", "Scheduler", "History", "Browser Extension", "Settings"):
+            button = self.button(navigation, "Extension" if name == "Browser Extension" else name,
+                                 lambda name=name: self.show(name), sidebar=True)
+            button.pack(side="left", padx=1)
+            self.nav[name] = button
+        tk.Frame(root, bg=LINE, height=1).pack(fill="x")
+        content = tk.Frame(root, bg=BG)
+        content.pack(fill="both", expand=True)
         footer = tk.Frame(content, bg=PANEL, highlightthickness=1, highlightbackground=LINE)
         footer.pack(side="bottom", fill="x")
         self.label(footer, fg=MUTED, textvariable=self.status, size=9).pack(side="left", padx=16, pady=7)
         self.footer_speed = self.label(footer, fg=MUTED, size=9)
         self.footer_speed.pack(side="right", padx=16)
         self.main = tk.Frame(content, bg=BG)
-        self.main.pack(fill="both", expand=True, padx=26, pady=(21, 15))
+        self.main.pack(fill="both", expand=True, padx=15, pady=(11, 9))
         root.bind("<Control-n>", lambda _: self.new_download(False))
         root.bind("<Control-f>", lambda _: self.focus_search())
         self.show(self.view)
@@ -147,32 +124,14 @@ class DownloadManager:
         canvas.create_line(x - size * .59, y + size * .78, x + size * .59, y + size * .78,
                            width=2, fill=color, capstyle="round")
 
-    def draw_nav_icon(self, canvas, icon):
-        if icon == "download":
-            self.draw_arrow(canvas, 8, 8, MUTED, 9)
-        elif icon == "clock":
-            canvas.create_oval(2, 3, 14, 15, outline=MUTED, width=1.5)
-            canvas.create_line(8, 5, 8, 9, 11, 10, fill=MUTED, width=1.5)
-        elif icon == "history":
-            canvas.create_arc(2, 3, 14, 15, start=155, extent=300, outline=MUTED, width=1.5, style="arc")
-            canvas.create_line(2, 4, 2, 8, 6, 8, fill=MUTED, width=1.5)
-            canvas.create_line(8, 6, 8, 10, 11, 10, fill=MUTED, width=1.5)
-        elif icon == "browser":
-            canvas.create_rectangle(1, 4, 15, 14, outline=MUTED, width=1.5)
-            canvas.create_line(2, 7, 14, 7, fill=MUTED, width=1.5)
-        else:
-            for y, x in ((5, 5), (9, 11), (13, 7)):
-                canvas.create_line(1, y, 15, y, fill=MUTED, width=1.5)
-                canvas.create_oval(x - 2, y - 2, x + 2, y + 2, outline=MUTED, fill=SIDE)
-
     def configure_style(self):
         style = ttk.Style(self.root)
         style.theme_use("clam")
         style.layout("Treeview", [("Treeview.treearea", {"sticky": "nswe"})])
         style.configure("Treeview", background=PANEL, fieldbackground=PANEL, foreground=INK,
-                        rowheight=45, borderwidth=0, highlightthickness=0, relief="flat", font=(FONT, 10))
+                        rowheight=34, borderwidth=0, highlightthickness=0, relief="flat", font=(FONT, 10))
         style.configure("Treeview.Heading", background=INPUT, foreground=MUTED, borderwidth=0,
-                        relief="flat", font=(FONT, 9, "bold"), padding=(8, 10))
+                        relief="flat", font=(FONT, 9, "bold"), padding=(7, 7))
         style.map("Treeview", background=[("selected", SELECTION)], foreground=[("selected", INK)])
         style.map("Treeview.Heading", background=[("active", ACTIVE)])
         style.layout("Queue.Vertical.TScrollbar", [
@@ -217,14 +176,12 @@ class DownloadManager:
         self.search = None
         for child in self.main.winfo_children():
             child.destroy()
-        for name, (row, icon, button) in self.nav.items():
+        for name, button in self.nav.items():
             color = ACTIVE if name == view else SIDE
-            row.configure(bg=color)
-            icon.configure(bg=color)
             button.configure(bg=color, fg=ACCENT if name == view else MUTED, highlightbackground=color)
         header = tk.Frame(self.main, bg=BG)
-        header.pack(fill="x", pady=(0, 15))
-        self.label(header, view, bg=BG, size=27, bold=True).pack(side="left")
+        header.pack(fill="x", pady=(0, 9))
+        self.label(header, view, bg=BG, size=20, bold=True).pack(side="left")
         if view == "Downloads":
             self.button(header, "Batch add", lambda: self.new_download(False)).pack(side="right", padx=(8, 0))
             if self.draft is None:
@@ -244,34 +201,19 @@ class DownloadManager:
         self.update_live()
 
     def quick_add_panel(self):
-        hero = tk.Frame(self.main, bg=HERO, height=166)
-        hero.pack(fill="x", pady=(0, 16))
-        hero.pack_propagate(False)
-        art = tk.Canvas(hero, width=237, height=166, bg=HERO, highlightthickness=0)
-        art.pack(side="right")
-        x, y = 115, 82
-        for radius in (44, 61, 78, 97, 119):
-            art.create_oval(x - radius, y - radius, x + radius, y + radius,
-                            outline="#315078", width=1)
-        for px, py, fill in ((47, 43, "#82a8dc"), (183, 119, LIME), (211, 87, "#82a8dc"),
-                             (76, 132, "#5b81b4"), (147, 15, "#5b81b4")):
-            art.create_oval(px - 3, py - 3, px + 3, py + 3, fill=fill, outline="")
-        art.create_oval(x - 39, y - 39, x + 39, y + 39, fill="#1d3658", outline="#6d95ca")
-        self.draw_arrow(art, x, y, LIME, 27)
-        content = tk.Frame(hero, bg=HERO)
-        content.pack(side="left", fill="both", expand=True, padx=(21, 4), pady=13)
-        self.label(content, "Add a download", bg=HERO, fg="white", size=20, bold=True).pack(anchor="w")
-        self.label(content, "Paste a direct HTTP or HTTPS file link.", bg=HERO, fg=HERO_TEXT).pack(anchor="w", pady=(1, 7))
-        row = tk.Frame(content, bg=HERO)
+        hero = tk.Frame(self.main, bg=HERO, padx=12, pady=8)
+        hero.pack(fill="x", pady=(0, 10))
+        row = tk.Frame(hero, bg=HERO)
         row.pack(fill="x")
+        self.label(row, "Download link", bg=HERO, fg=INK, size=9, bold=True).pack(side="left", padx=(0, 8))
         self.quick_entry = self.entry(row, self.quick_url)
-        self.quick_entry.configure(background="#203958", foreground="white", insertbackground="white",
+        self.quick_entry.configure(background="#203958", foreground=INK, insertbackground=INK,
                                    highlightbackground="#4b6687", highlightcolor=LIME)
-        self.quick_entry.pack(side="left", fill="x", expand=True, ipady=7)
+        self.quick_entry.pack(side="left", fill="x", expand=True, ipady=4)
         self.quick_entry.bind("<Return>", self.quick_add)
         self.button(row, "Add to queue", self.quick_add, lime=True).pack(side="left", padx=(7, 0))
-        self.quick_message = self.label(content, bg=HERO, fg=HERO_TEXT, size=8, anchor="w")
-        self.quick_message.pack(fill="x", pady=(4, 0))
+        self.quick_message = self.label(hero, bg=HERO, fg=HERO_TEXT, size=8, anchor="w")
+        self.quick_message.pack(fill="x", pady=(3, 0))
         self.quick_message.configure(text="Save to: " + self.destination.get())
 
     def quick_add(self, _=None):
@@ -365,8 +307,8 @@ class DownloadManager:
         workspace.pack(fill="both", expand=True)
         layout = self.draft if self.draft is not None else app.snapshot()["panels"]
         if self.view == "Downloads" and (layout or self.draft is not None):
-            self.right = tk.Frame(workspace, bg=BG, width=254)
-            self.right.pack(side="right", fill="y", padx=(14, 0))
+            self.right = tk.Frame(workspace, bg=BG, width=204)
+            self.right.pack(side="right", fill="y", padx=(9, 0))
             self.right.pack_propagate(False)
             for key in layout:
                 if key in PANELS:
@@ -375,11 +317,13 @@ class DownloadManager:
                 self.hidden_cards()
         queue = self.panel(workspace)
         queue.pack(side="left", fill="both", expand=True)
+        if self.view == "Downloads" and layout and self.draft is None:
+            workspace.bind("<Configure>", lambda event: self.fit_panels(event, queue))
         bar = tk.Frame(queue, bg=PANEL)
         bar.pack(fill="x", pady=(0, 9))
         self.label(bar, {"History": "Completed downloads", "Scheduler": "Upcoming downloads"}.get(
             self.view, "Queue"), size=15, bold=True).pack(side="left")
-        self.search = self.entry(bar, self.query, width=18)
+        self.search = self.entry(bar, self.query, width=16)
         self.search.pack(side="right", ipady=5)
         self.label(bar, "Search", fg=MUTED, size=9).pack(side="right", padx=6)
         toolbar = tk.Frame(queue, bg=PANEL)
@@ -400,7 +344,7 @@ class DownloadManager:
         self.tree = ttk.Treeview(table, columns=columns, show="headings", selectmode="browse")
         for name, heading, width in zip(columns, ("File name", "Progress", "Speed",
                                                  "Starts" if self.view == "Scheduler" else "ETA", "Status"),
-                                        (172, 127, 81, 122 if self.view == "Scheduler" else 58, 105)):
+                                        (158, 120, 75, 118 if self.view == "Scheduler" else 52, 96)):
             self.tree.heading(name, text=heading, anchor="w", command=lambda name=name: self.sort_by(name))
             self.tree.column(name, width=width, minwidth=40, stretch=name == "name", anchor="w")
         self.tree.tag_configure("alternate", background="#182438")
@@ -419,15 +363,21 @@ class DownloadManager:
         self.tree.pack(fill="both", expand=True, side="left")
         self.empty_mode = None
         self.empty_state = tk.Frame(table, bg=PANEL)
-        icon = tk.Canvas(self.empty_state, width=52, height=52, bg=PANEL, highlightthickness=0)
+        icon = tk.Canvas(self.empty_state, width=39, height=39, bg=PANEL, highlightthickness=0)
         icon.pack(pady=(0, 9))
-        icon.create_oval(0, 0, 52, 52, fill=ACTIVE, outline="")
-        self.draw_arrow(icon, 26, 24, ACCENT, 16)
+        icon.create_oval(0, 0, 39, 39, fill=ACTIVE, outline="")
+        self.draw_arrow(icon, 19, 17, ACCENT, 13)
         self.empty_title = self.label(self.empty_state, size=14, bold=True)
         self.empty_title.pack()
         self.empty_hint = self.label(self.empty_state, fg=MUTED, size=9)
         self.empty_hint.pack(pady=(3, 9))
         self.empty_action = self.button(self.empty_state, "", lambda: None)
+
+    def fit_panels(self, event, queue):
+        if event.width < 825:
+            self.right.pack_forget()
+        elif not self.right.winfo_manager():
+            self.right.pack(side="right", fill="y", padx=(9, 0), before=queue)
 
     def scroll_queue(self, first, last):
         self.scrollbar.set(first, last)
@@ -616,11 +566,11 @@ class DownloadManager:
             self.button(header, "×", lambda: self.change_layout(key, "hide")).pack(side="right")
             self.button(header, "↑", lambda: self.change_layout(key, "up")).pack(side="right", padx=4)
         self.label(header, PANELS[key], bold=True).pack(side="left")
-        value = self.label(card, justify="left", anchor="w", wraplength=216)
+        value = self.label(card, justify="left", anchor="w", wraplength=174)
         value.pack(fill="x")
         self.cards[key] = (card, value)
         if key == "speed":
-            self.graph = tk.Canvas(card, height=105, bg=PANEL, highlightthickness=0)
+            self.graph = tk.Canvas(card, height=77, bg=PANEL, highlightthickness=0)
             self.graph.pack(fill="x", pady=(6, 0))
             axis = tk.Frame(card, bg=PANEL)
             axis.pack(fill="x", pady=(5, 0))

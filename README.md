@@ -32,4 +32,8 @@ Download **Update Windows.bat** from the release and put it next to **Zs-Downloa
 
 Run `python app.py` with Python 3.10 or newer and Tk installed. The native interface works without starting a browser. The release build script needs Python 3.11 or newer and Go 1.24 or newer. Run `python packaging/build_windows.py` to build the Windows x64 executable in `dist/`.
 
+## Build the installer
+
+On Windows, build the portable executable into `dist/` with the command above. Open `packaging/DownloadManager.iss` in Inno Setup 6.4 or newer and choose **Compile**, or run `ISCC.exe packaging\DownloadManager.iss`. The installer is written to `dist/Zs-Download-Manager-Setup.exe`. The installer kit on the release page includes the executable, script, and icon in the required folder structure.
+
 App state is stored in `~/.z-download-manager`.

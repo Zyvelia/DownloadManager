@@ -15,7 +15,8 @@ MAX_ARCHIVE = 16 * 1024 * 1024
 CODE_FILES = (
     "app.py", "desktop.py", "README.md",
     "Start Windows.cmd", "Update Windows.bat", "update.py", ".gitignore",
-    "packaging/launcher.go", "packaging/build_windows.py",
+    "packaging/launcher.go", "packaging/build_windows.py", "packaging/DownloadManager.iss",
+    "assets/app.png", "assets/app.ico",
     "extension/manifest.json", "extension/worker.js", "extension/popup.html",
     "extension/popup.css", "extension/popup.js", "extension/README.md",
 )
