@@ -1,12 +1,19 @@
 # Z’s Download Manager
 
-A native Windows desktop download manager with a dark purple queue, scheduler, history, live speed graph, and customizable panels.
+A native Windows download manager for direct HTTP and HTTPS files.
+
+- Paste one link or a batch of links, pick a destination, and start now or schedule a local start time.
+- Search and sort the queue, filter by status, and prioritize transfers through the **Actions** menu or by right-clicking a row.
+- Pause a transfer, retry a failure, or pause the entire queue. Resume reuses partial files on servers that support validated HTTP range requests. Other servers restart the transfer.
+- Monitor throughput, progress, and estimated time remaining. Use **Customize layout** to rearrange, hide, and restore dashboard panels.
+- Find completed files in **History**, open the file or destination folder, and remove entries while keeping completed files.
+- Set a bandwidth limit and run up to eight downloads at once. **Ctrl+N** opens batch entry and **Ctrl+F** focuses search.
 
 ## Run on Windows
 
 Download **Zs-Download-Manager.exe** from the [latest release](https://github.com/Zyvelia/DownloadManager/releases/latest) and double-click it. The Windows x64 executable includes its own runtime. The app opens directly in a desktop window and needs no browser or Python installation.
 
-Paste a direct HTTP or HTTPS file link and choose a destination. Use **Scheduler** for future downloads, **Settings** for simultaneous transfers and bandwidth limits, and **Customize layout** to rearrange, hide, or restore panels. Close the window to stop active transfers. Pause and resume reuse a partial file when the server supports validated HTTP range requests.
+Keep the app open while downloading or waiting for a scheduled transfer. Active transfers save partial data when you close the app.
 
 ## Browser extension
 

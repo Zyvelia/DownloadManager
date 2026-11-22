@@ -1,6 +1,7 @@
 """Download queue and optional browser extension bridge."""
 import argparse
 import json
+import math
 import os
 import re
 import secrets
@@ -24,7 +25,7 @@ state = json.loads(DATABASE.read_text()) if DATABASE.exists() else {
 }
 for job in state["jobs"]:
     if job["status"] in {"Downloading", "Pausing"}:
-        job.update(status="Paused", speed=0)
+        job.update(status="Queued" if job.pop("queue_hold", False) else "Paused", speed=0)
 lock = threading.RLock()
 running = {}
 history = []
@@ -38,7 +39,7 @@ def save():
     temp.replace(DATABASE)
 
 
-def enqueue(data, source):
+def make_job(data, source):
     url = str(data.get("url", "")).strip()
     parsed = urlsplit(url)
     if parsed.scheme not in {"http", "https"} or not parsed.hostname or parsed.username:
@@ -48,18 +49,41 @@ def enqueue(data, source):
     if not folder.is_absolute():
         raise ValueError("Enter an absolute destination folder.")
     scheduled = float(data.get("scheduled") or 0) if source == "Desktop" else 0
+    if not math.isfinite(scheduled) or scheduled < 0:
+        raise ValueError("Choose a valid start time.")
     name = unquote(parsed.path.rsplit("/", 1)[-1])
     name = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "_", name).strip(". ")[:160] or "download"
     if re.fullmatch(r"(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\..*)?", name, re.I):
         name = "_" + name
-    job = dict(id=uuid.uuid4().hex, url=url, name=name, destination=str(folder),
+    return dict(id=uuid.uuid4().hex, url=url, name=name, destination=str(folder),
                scheduled=scheduled, status="Scheduled" if scheduled > time.time() else "Queued",
-               source=source, size=0, received=0, speed=0, error="", validator="")
-    state["jobs"].append(job)
-    if source == "Browser":
-        state["last"] = {"name": name, "time": time.time()}
-    save()
-    return job
+               source=source, size=0, received=0, speed=0, error="", validator="",
+               added=time.time(), priority=0)
+
+
+def enqueue(data, source):
+    with lock:
+        job = make_job(data, source)
+        state["jobs"].append(job)
+        if source == "Browser":
+            state["last"] = {"name": job["name"], "time": time.time()}
+        save()
+        return job
+
+
+def enqueue_many(urls, destination, scheduled):
+    if not urls:
+        raise ValueError("Paste at least one download link.")
+    with lock:
+        jobs = [make_job({"url": url, "destination": destination, "scheduled": scheduled}, "Desktop")
+                for url in urls]
+        state["jobs"].extend(jobs)
+        try:
+            save()
+        except OSError:
+            del state["jobs"][-len(jobs):]
+            raise
+        return jobs
 
 
 def transfer(job, stop):
@@ -68,6 +92,8 @@ def transfer(job, stop):
     try:
         folder.mkdir(parents=True, exist_ok=True)
         offset = partial.stat().st_size if partial.exists() and job["validator"] else 0
+        if job["size"] and offset >= job["size"]:
+            offset = 0
         headers = {"Accept-Encoding": "identity"}
         if offset:
             headers.update({"Range": f"bytes={offset}-", "If-Range": job["validator"]})
@@ -75,7 +101,8 @@ def transfer(job, stop):
         with urlopen(request, timeout=12) as response:
             resumed = response.status == 206
             content_range = re.fullmatch(r"bytes (\d+)-(\d+)/(\d+)", response.headers.get("Content-Range", ""))
-            if resumed and (not offset or not content_range or int(content_range[1]) != offset):
+            if resumed and (not offset or not content_range or int(content_range[1]) != offset
+                            or int(content_range[2]) + 1 != int(content_range[3])):
                 raise ValueError("Server returned an unexpected byte range.")
             if not resumed:
                 offset = 0
@@ -83,6 +110,12 @@ def transfer(job, stop):
             total = int(content_range[3]) if resumed else length
             etag = response.headers.get("ETag", "")
             validator = etag if etag and not etag.startswith("W/") else response.headers.get("Last-Modified", "")
+            if resumed:
+                if validator and validator != job["validator"]:
+                    raise ValueError("The remote file changed during resume.")
+                validator = job["validator"]
+                if length and length != total - offset:
+                    raise ValueError("Server returned an inconsistent byte range.")
             with partial.open("ab" if resumed else "wb") as output:
                 with lock:
                     job.update(size=total, received=offset, validator=validator)
@@ -91,7 +124,8 @@ def transfer(job, stop):
                 sample_time, sample_bytes = started, offset
                 received = offset
                 while not stop.is_set():
-                    chunk = response.read(64 * 1024)
+                    chunk_started = time.monotonic()
+                    chunk = response.read1(64 * 1024)
                     if not chunk:
                         break
                     output.write(chunk)
@@ -104,10 +138,11 @@ def transfer(job, stop):
                             job["speed"] = (received - sample_bytes) / (now - sample_time)
                             sample_time, sample_bytes = now, received
                     if cap:
-                        stop.wait(len(chunk) / cap)
+                        stop.wait(max(0, len(chunk) / cap - (now - chunk_started)))
         with lock:
             if stop.is_set():
-                job["status"] = "Paused"
+                job["status"] = "Queued" if job.get("queue_hold") else "Paused"
+                job.pop("queue_hold", None)
             else:
                 if total and received != total:
                     raise OSError("Transfer ended before the entire file arrived.")
@@ -125,10 +160,11 @@ def transfer(job, stop):
                 except OSError:
                     target.unlink()
                     raise
-                job.update(status="Completed", size=received, name=target.name)
+                job.update(status="Completed", size=received, name=target.name, completed=time.time())
     except (OSError, ValueError, HTTPException) as error:
         with lock:
-            job.update(status="Paused" if stop.is_set() else "Failed",
+            status = ("Queued" if job.pop("queue_hold", False) else "Paused") if stop.is_set() else "Failed"
+            job.update(status=status,
                        error="" if stop.is_set() else str(error))
     finally:
         with lock:
@@ -146,7 +182,7 @@ def scheduler():
             del history[:-600]
             if state["hold"]:
                 continue
-            for job in state["jobs"]:
+            for job in sorted(state["jobs"], key=lambda item: -item.get("priority", 0)):
                 if len(running) >= state["parallel"]:
                     break
                 if job["status"] not in {"Queued", "Scheduled"} or job["scheduled"] > time.time():
@@ -163,11 +199,9 @@ def set_hold(hold):
         state["hold"] = hold
         for job in state["jobs"]:
             event = running.get(job["id"])
-            if hold and event:
-                job["status"] = "Pausing"
+            if hold and event and job["status"] == "Downloading":
+                job.update(status="Pausing", queue_hold=True)
                 event.set()
-            elif not hold and job["status"] == "Paused":
-                job["status"] = "Queued"
         save()
 
 
@@ -184,6 +218,27 @@ def job_action(job_id):
             job["status"] = "Paused"
         elif job["status"] in {"Paused", "Failed", "Scheduled"}:
             job.update(status="Queued", scheduled=0)
+        save()
+
+
+def prioritize(job_id):
+    with lock:
+        job = next((item for item in state["jobs"] if item["id"] == job_id), None)
+        if job and job["status"] != "Completed":
+            job["priority"] = 0 if job.get("priority") else 1
+            save()
+
+
+def remove_job(job_id):
+    with lock:
+        job = next((item for item in state["jobs"] if item["id"] == job_id), None)
+        if job is None:
+            return
+        if job_id in running:
+            raise ValueError("Pause the transfer and wait for it to stop before removing it.")
+        partial = Path(job["destination"]) / (".zdm-" + job["id"] + ".part")
+        partial.unlink(missing_ok=True)
+        state["jobs"].remove(job)
         save()
 
 
